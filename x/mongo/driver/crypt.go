@@ -40,7 +40,7 @@ type CryptOptions struct {
 	MarkFn               MarkCommandFn
 	KmsProviders         bsoncore.Document
 	SchemaMap            map[string]bsoncore.Document
-	TlsCfg               tls.Config
+	TlsCfg               map[string]tls.Config
 	BypassAutoEncryption bool
 }
 
@@ -51,7 +51,7 @@ type Crypt struct {
 	collInfoFn CollectionInfoFn
 	keyFn      KeyRetrieverFn
 	markFn     MarkCommandFn
-	tlsCfg     tls.Config
+	tlsCfg     map[string]tls.Config
 
 	BypassAutoEncryption bool
 }
@@ -270,7 +270,10 @@ func (c *Crypt) decryptKey(ctx context.Context, kmsCtx *mongocrypt.KmsContext) e
 		addr = fmt.Sprintf("%s:%d", host, defaultKmsPort)
 	}
 
-	conn, err := tls.Dial("tcp", addr, &c.tlsCfg)
+	// TODO: apply TLS config for each KMS provider
+	kmsProvider, err := kmsCtx.KMSProvider()
+	tlsCfg := c.tlsCfg[kmsProvider]
+	conn, err := tls.Dial("tcp", addr, &tlsCfg)
 	if err != nil {
 		return err
 	}
