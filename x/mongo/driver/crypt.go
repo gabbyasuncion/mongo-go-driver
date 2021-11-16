@@ -270,8 +270,7 @@ func (c *Crypt) decryptKey(ctx context.Context, kmsCtx *mongocrypt.KmsContext) e
 		addr = fmt.Sprintf("%s:%d", host, defaultKmsPort)
 	}
 
-	// TODO: apply TLS config for each KMS provider
-	kmsProvider, err := kmsCtx.KMSProvider()
+	kmsProvider := kmsCtx.KMSProvider()
 	tlsCfg := c.tlsCfg[kmsProvider]
 	conn, err := tls.Dial("tcp", addr, &tlsCfg)
 	if err != nil {
