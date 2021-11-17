@@ -1045,7 +1045,7 @@ func (coll *Collection) Distinct(ctx context.Context, fieldName string, filter i
 	selector := makeReadPrefSelector(sess, coll.readSelector, coll.client.localThreshold)
 	option := options.MergeDistinctOptions(opts...)
 
-	op := operation.NewDistinct(fieldName, bsoncore.Document(f)).
+	op := operation.NewDistinct(fieldName, f).
 		Session(sess).ClusterClock(coll.client.clock).
 		Database(coll.db.name).Collection(coll.name).CommandMonitor(coll.client.monitor).
 		Deployment(coll.client.deployment).ReadConcern(rc).ReadPreference(coll.readPreference).
@@ -1274,9 +1274,9 @@ func (coll *Collection) FindOne(ctx context.Context, filter interface{},
 		ctx = context.Background()
 	}
 
-	findOpts := make([]*options.FindOptions, len(opts))
-	for i, opt := range opts {
-		findOpts[i] = &options.FindOptions{
+	findOpts := make([]*options.FindOptions, 0, len(opts))
+	for _, opt := range opts {
+		findOpts = append(findOpts, &options.FindOptions{
 			AllowPartialResults: opt.AllowPartialResults,
 			BatchSize:           opt.BatchSize,
 			Collation:           opt.Collation,
@@ -1295,7 +1295,7 @@ func (coll *Collection) FindOne(ctx context.Context, filter interface{},
 			Skip:                opt.Skip,
 			Snapshot:            opt.Snapshot,
 			Sort:                opt.Sort,
-		}
+		})
 	}
 	// Unconditionally send a limit to make sure only one document is returned and the cursor is not kept open
 	// by the server.

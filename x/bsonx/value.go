@@ -35,7 +35,7 @@ func (v Val) string() string {
 		return v.primitive.(string)
 	}
 	// The string will either end with a null byte or it fills the entire bootstrap space.
-	length := uint8(v.bootstrap[0])
+	length := v.bootstrap[0]
 	return string(v.bootstrap[1 : length+1])
 }
 
@@ -169,7 +169,7 @@ func (v Val) MarshalAppendBSONValue(dst []byte) (bsontype.Type, []byte, error) {
 	case bsontype.Boolean:
 		dst = bsoncore.AppendBoolean(dst, v.Boolean())
 	case bsontype.DateTime:
-		dst = bsoncore.AppendDateTime(dst, int64(v.DateTime()))
+		dst = bsoncore.AppendDateTime(dst, v.DateTime())
 	case bsontype.Null:
 	case bsontype.Regex:
 		pattern, options := v.Regex()
@@ -178,9 +178,9 @@ func (v Val) MarshalAppendBSONValue(dst []byte) (bsontype.Type, []byte, error) {
 		ns, ptr := v.DBPointer()
 		dst = bsoncore.AppendDBPointer(dst, ns, ptr)
 	case bsontype.JavaScript:
-		dst = bsoncore.AppendJavaScript(dst, string(v.JavaScript()))
+		dst = bsoncore.AppendJavaScript(dst, v.JavaScript())
 	case bsontype.Symbol:
-		dst = bsoncore.AppendSymbol(dst, string(v.Symbol()))
+		dst = bsoncore.AppendSymbol(dst, v.Symbol())
 	case bsontype.CodeWithScope:
 		code, doc := v.CodeWithScope()
 		var scope []byte
@@ -470,16 +470,12 @@ func (v Val) Undefined() {
 	if v.t != bsontype.Undefined {
 		panic(ElementTypeError{"bson.Value.Undefined", v.t})
 	}
-	return
 }
 
 // UndefinedOK is the same as Undefined, except it returns a boolean instead of
 // panicking.
 func (v Val) UndefinedOK() bool {
-	if v.t != bsontype.Undefined {
-		return false
-	}
-	return true
+	return v.t == bsontype.Undefined
 }
 
 // ObjectID returns the BSON ObjectID the Value represents. It panics if the value is a BSON type
@@ -547,7 +543,7 @@ func (v Val) Time() time.Time {
 		panic(ElementTypeError{"bson.Value.Time", v.t})
 	}
 	i := v.i64()
-	return time.Unix(int64(i)/1000, int64(i)%1000*1000000)
+	return time.Unix(i/1000, i%1000*1000000)
 }
 
 // TimeOK is the same as Time, except it returns a boolean instead of
@@ -557,7 +553,7 @@ func (v Val) TimeOK() (time.Time, bool) {
 		return time.Time{}, false
 	}
 	i := v.i64()
-	return time.Unix(int64(i)/1000, int64(i)%1000*1000000), true
+	return time.Unix(i/1000, i%1000*1000000), true
 }
 
 // Null returns the BSON undefined the Value represents. It panics if the value is a BSON type
@@ -566,7 +562,6 @@ func (v Val) Null() {
 	if v.t != bsontype.Null && v.t != bsontype.Type(0) {
 		panic(ElementTypeError{"bson.Value.Null", v.t})
 	}
-	return
 }
 
 // NullOK is the same as Null, except it returns a boolean instead of
@@ -762,16 +757,12 @@ func (v Val) MinKey() {
 	if v.t != bsontype.MinKey {
 		panic(ElementTypeError{"bson.Value.MinKey", v.t})
 	}
-	return
 }
 
 // MinKeyOK is the same as MinKey, except it returns a boolean instead of
 // panicking.
 func (v Val) MinKeyOK() bool {
-	if v.t != bsontype.MinKey {
-		return false
-	}
-	return true
+	return v.t == bsontype.MinKey
 }
 
 // MaxKey returns the BSON maxkey the Value represents. It panics if the value is a BSON type
@@ -780,16 +771,12 @@ func (v Val) MaxKey() {
 	if v.t != bsontype.MaxKey {
 		panic(ElementTypeError{"bson.Value.MaxKey", v.t})
 	}
-	return
 }
 
 // MaxKeyOK is the same as MaxKey, except it returns a boolean instead of
 // panicking.
 func (v Val) MaxKeyOK() bool {
-	if v.t != bsontype.MaxKey {
-		return false
-	}
-	return true
+	return v.t == bsontype.MaxKey
 }
 
 // Equal compares v to v2 and returns true if they are equal. Unknown BSON types are

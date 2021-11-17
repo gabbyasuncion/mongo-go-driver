@@ -873,7 +873,7 @@ func TestBuild(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Run("BuildDocument", func(t *testing.T) {
-				elems := make([]byte, 0, 0)
+				elems := make([]byte, 0)
 				for _, elem := range tc.elems {
 					elems = append(elems, elem...)
 				}
@@ -934,6 +934,12 @@ func TestNullBytes(t *testing.T) {
 				assertBSONCreationPanics(t, createValFn, invalidRegexPanicMsg)
 			})
 		}
+	})
+	t.Run("sub document field name", func(t *testing.T) {
+		createDocFn := func() {
+			NewDocumentBuilder().StartDocument("foobar").AppendDocument("a\x00", []byte("foo")).FinishDocument()
+		}
+		assertBSONCreationPanics(t, createDocFn, invalidKeyPanicMsg)
 	})
 }
 

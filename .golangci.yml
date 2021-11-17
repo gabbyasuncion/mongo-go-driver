@@ -9,19 +9,20 @@ linters:
     - errcheck
     # - errorlint
     - goimports
-    # - gosimple
+    - gosimple
     - govet
     - ineffassign
+    - makezero
     # - misspell
-    # - nakedret
+    - nakedret
     - revive
     - staticcheck
-    # - structcheck
+    - structcheck
     - typecheck
     - unused
-    # - unconvert
+    - unconvert
     # - unparam
-    # - varcheck
+    - varcheck
 
 linters-settings:
   errcheck:
@@ -69,6 +70,7 @@ issues:
     - path: x/mongo/driver/auth/internal/awsv4
       linters:
         - unused
+        - structcheck
     # Disable "unused" linter for "crypt.go" because the linter doesn't work correctly without
     # enabling CGO.
     - path: x/mongo/driver/crypt.go

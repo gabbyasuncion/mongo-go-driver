@@ -197,7 +197,7 @@ type Operation struct {
 	CommandMonitor *event.CommandMonitor
 
 	// Crypt specifies a Crypt object to use for automatic client side encryption and decryption.
-	Crypt *Crypt
+	Crypt Crypt
 
 	// ServerAPI specifies options used to configure the API version sent to the server.
 	ServerAPI *ServerAPIOptions
@@ -212,7 +212,7 @@ type Operation struct {
 
 // shouldEncrypt returns true if this operation should automatically be encrypted.
 func (op Operation) shouldEncrypt() bool {
-	return op.Crypt != nil && !op.Crypt.BypassAutoEncryption
+	return op.Crypt != nil && !op.Crypt.BypassAutoEncryption()
 }
 
 // selectServer handles performing server selection for an operation.
@@ -1204,6 +1204,8 @@ func (op Operation) getReadPrefBasedOnTransaction() (*readpref.ReadPref, error) 
 }
 
 func (op Operation) createReadPref(desc description.SelectedServer, isOpQuery bool) (bsoncore.Document, error) {
+	// TODO(GODRIVER-2231): Instead of checking if isOutputAggregate and desc.Server.WireVersion.Max < 13,
+	// somehow check if supplied readPreference was "overwritten" with primary in description.selectForReplicaSet.
 	if desc.Server.Kind == description.Standalone || (isOpQuery && desc.Server.Kind != description.Mongos) ||
 		op.Type == Write || (op.IsOutputAggregate && desc.Server.WireVersion.Max < 13) {
 		// Don't send read preference for:
@@ -1516,7 +1518,7 @@ func (op Operation) publishFinishedEvent(ctx context.Context, info finishedInfor
 	var durationNanos int64
 	var emptyTime time.Time
 	if info.startTime != emptyTime {
-		durationNanos = time.Now().Sub(info.startTime).Nanoseconds()
+		durationNanos = time.Since(info.startTime).Nanoseconds()
 	}
 
 	finished := event.CommandFinishedEvent{

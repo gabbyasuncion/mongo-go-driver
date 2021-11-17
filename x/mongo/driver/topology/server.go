@@ -180,8 +180,7 @@ func NewServer(addr address.Address, topologyID primitive.ObjectID, opts ...Serv
 		PoolMonitor: cfg.poolMonitor,
 	}
 
-	connectionOpts := make([]ConnectionOption, len(cfg.connectionOpts))
-	copy(connectionOpts, cfg.connectionOpts)
+	connectionOpts := copyConnectionOpts(cfg.connectionOpts)
 	connectionOpts = append(connectionOpts, withErrorHandlingCallback(s.ProcessHandshakeError))
 	s.pool = newPool(pc, connectionOpts...)
 	s.publishServerOpeningEvent(s.address)
@@ -272,11 +271,8 @@ func (s *Server) Connection(ctx context.Context) (driver.Connection, error) {
 }
 
 // ProcessHandshakeError implements SDAM error handling for errors that occur before a connection
-// finishes handshaking. opCtx is the context passed to Server.Connection() and is used to determine
-// whether or not an operation-scoped context deadline or cancellation was the cause of the
-// handshake error; it is not used for timeout or cancellation of ProcessHandshakeError.
-// TODO(GODRIVER-2138): Remove unnecessary operation Context parameter after GODRIVER-2038.
-func (s *Server) ProcessHandshakeError(opCtx context.Context, err error, startingGenerationNumber uint64, serviceID *primitive.ObjectID) {
+// finishes handshaking.
+func (s *Server) ProcessHandshakeError(err error, startingGenerationNumber uint64, serviceID *primitive.ObjectID) {
 	// Ignore the error if the server is behind a load balancer but the service ID is unknown. This indicates that the
 	// error happened when dialing the connection or during the MongoDB handshake, so we don't know the service ID to
 	// use for clearing the pool.
@@ -593,8 +589,7 @@ func (s *Server) updateDescription(desc description.Server) {
 // createConnection creates a new connection instance but does not call connect on it. The caller must call connect
 // before the connection can be used for network operations.
 func (s *Server) createConnection() (*connection, error) {
-	opts := make([]ConnectionOption, len(s.cfg.connectionOpts))
-	copy(opts, s.cfg.connectionOpts)
+	opts := copyConnectionOpts(s.cfg.connectionOpts)
 	opts = append(opts,
 		WithConnectTimeout(func(time.Duration) time.Duration { return s.cfg.heartbeatTimeout }),
 		WithReadTimeout(func(time.Duration) time.Duration { return s.cfg.heartbeatTimeout }),
@@ -610,6 +605,12 @@ func (s *Server) createConnection() (*connection, error) {
 	)
 
 	return newConnection(s.address, opts...)
+}
+
+func copyConnectionOpts(opts []ConnectionOption) []ConnectionOption {
+	optsCopy := make([]ConnectionOption, len(opts))
+	copy(optsCopy, opts)
+	return optsCopy
 }
 
 func (s *Server) setupHeartbeatConnection() error {
